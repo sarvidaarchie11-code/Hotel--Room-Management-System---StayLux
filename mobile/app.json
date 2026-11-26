@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "StayLux",
+    "slug": "staylux",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "staylux",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.example.staylux"
+    },
+    "android": {
+      "package": "com.example.staylux",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1B2747"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#1B2747",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow StayLux to access your photos so you can upload room pictures."
+        }
+      ],
+      "expo-notifications",
+      "expo-status-bar",
+      "expo-image",
+      "expo-sharing"
+    ]
+  }
+}

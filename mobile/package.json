@@ -1,0 +1,44 @@
+{
+  "name": "hotel-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "setup": "npm install && npm run install:expo",
+    "install:expo": "expo install expo-router react react-native react-native-screens react-native-safe-area-context react-native-svg expo-image-picker expo-notifications expo-secure-store expo-status-bar expo-constants expo-linking expo-splash-screen expo-image expo-print expo-sharing react-native-maps && expo install --dev typescript @types/react",
+    "start": "expo start",
+    "start:clear": "expo start -c",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "doctor": "expo-doctor"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "date-fns": "^4.1.0",
+    "expo": "~58.0.0",
+    "expo-constants": "~58.0.16",
+    "expo-image": "~58.0.18",
+    "expo-image-picker": "~58.0.10",
+    "expo-linking": "~58.0.17",
+    "expo-notifications": "~58.1.9",
+    "expo-print": "~58.0.9",
+    "expo-router": "~58.0.32",
+    "expo-secure-store": "~58.0.3",
+    "expo-sharing": "~58.0.23",
+    "expo-splash-screen": "~58.0.14",
+    "expo-status-bar": "~58.0.5",
+    "lucide-react-native": ">=0.468.0",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-maps": "1.29.11",
+    "react-native-safe-area-context": "~5.11.1",
+    "react-native-screens": "~4.30.1",
+    "react-native-svg": "15.16.0",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0",
+    "typescript": "~6.0.3"
+  }
+}

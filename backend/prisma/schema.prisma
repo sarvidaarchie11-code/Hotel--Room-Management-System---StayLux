@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: SQLite has no native enums in Prisma, so role/status columns are Strings
+// validated by zod + the service layer. Allowed values are documented per field.
+
+model User {
+  id                 Int            @id @default(autoincrement())
+  fullName           String
+  email              String         @unique
+  phone              String
+  passwordHash       String
+  role               String         @default("USER") // ADMIN | USER
+  isActive           Boolean        @default(true)
+  mustChangePassword Boolean        @default(false)
+  pushToken          String?
+  avatarPath         String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  bookings           Booking[]
+  notifications      Notification[]
+  verifiedPayments   Payment[]      @relation("PaymentVerifier")
+  favorites          Favorite[]
+  reviews            Review[]
+  activity           ActivityLog[]
+
+  @@index([role])
+}
+
+model RoomCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  rooms       Room[]
+}
+
+model Room {
+  id            Int           @id @default(autoincrement())
+  roomNumber    String        @unique
+  name          String
+  categoryId    Int
+  category      RoomCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  description   String
+  pricePerNight Float
+  maxGuests     Int
+  bedType       String
+  numberOfBeds  Int
+  size          String // e.g. "32 sqm"
+  floor         Int
+  status        String        @default("Available") // Available | Reserved | Occupied | Maintenance | Unavailable
+  featured      Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  images        RoomImage[]
+  amenities     RoomAmenity[]
+  bookings      Booking[]
+  favorites     Favorite[]
+  reviews       Review[]
+
+  @@index([status])
+  @@index([categoryId])
+}
+
+model RoomImage {
+  id        Int      @id @default(autoincrement())
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  path      String // e.g. /uploads/rooms/123-abc.jpg
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([roomId])
+}
+
+model Amenity {
+  id    Int           @id @default(autoincrement())
+  name  String        @unique
+  rooms RoomAmenity[]
+}
+
+model RoomAmenity {
+  roomId    Int
+  amenityId Int
+  room      Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, amenityId])
+}
+
+model Booking {
+  id              Int       @id @default(autoincrement())
+  reference       String    @unique
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  roomId          Int
+  room            Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  checkIn         DateTime
+  checkOut        DateTime
+  guests          Int
+  nights          Int
+  pricePerNight   Float
+  totalAmount     Float
+  discountPercent Int       @default(0)
+  discountAmount  Float     @default(0)
+  offerTitle      String?
+  depositAmount   Float     @default(0) // set when the admin approves; 0 = no deposit required
+  depositDueAt    DateTime? // unpaid deposits are auto-cancelled after this moment
+  status          String    @default("Pending") // Pending | Confirmed | Rejected | Cancelled | CheckedIn | CheckedOut | Completed
+  specialRequests String?
+  rejectionReason String?
+  reminderSent    Boolean   @default(false)
+  checkedInAt     DateTime?
+  checkedOutAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  payments        Payment[]
+  review          Review?
+
+  @@index([roomId, status, checkIn, checkOut])
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id            Int       @id @default(autoincrement())
+  reference     String    @unique
+  bookingId     Int
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        String // Cash | GCash | BankTransfer
+  status        String    @default("Submitted") // Submitted | Verified | Rejected
+  transactionRef String? // GCash ref no. / bank transfer ref no. entered by guest
+  note          String?
+  proofPath     String? // uploaded receipt screenshot
+  paidAt        DateTime  @default(now())
+  verifiedById  Int?
+  verifiedBy    User?     @relation("PaymentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  data      String? // JSON string, e.g. {"bookingId":5}
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read, createdAt])
+}
+
+model SpecialOffer {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String
+  discountPercent Int      @default(0)
+  validFrom       DateTime
+  validUntil      DateTime
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model HotelSettings {
+  id           Int      @id @default(1)
+  name         String   @default("StayLux")
+  tagline      String   @default("Quiet luxury, by the sea")
+  address      String   @default("")
+  phone        String   @default("")
+  email        String   @default("")
+  checkInTime  String   @default("14:00")
+  checkOutTime String   @default("12:00")
+  gcashNumber  String   @default("")
+  gcashName    String   @default("")
+  latitude     Float?
+  longitude    Float?
+  bankDetails  String   @default("")
+  depositPercent Int    @default(50) // 0 = no deposit; share of the total due after approval
+  depositHours   Int    @default(24) // hours the guest has to pay the deposit
+  updatedAt    DateTime @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  bookingId Int      @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int // 1..5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([roomId])
+}
+
+model Favorite {
+  userId    Int
+  roomId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, roomId])
+}
+
+/// Private per-user history: what the user did and what happened to their bookings/payments. Only the owner can read it.
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String // booking | stay | payment | account | review
+  title     String
+  detail    String?
+  refId     Int? // e.g. the booking id the entry is about
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
